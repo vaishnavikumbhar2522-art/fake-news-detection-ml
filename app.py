@@ -1,3 +1,4 @@
+
 import os
 import joblib
 from flask import Flask, render_template, request, jsonify
@@ -25,7 +26,9 @@ def predict():
         news_text = str(data.get("news", "")).strip()
 
         if not news_text:
-            return jsonify({"error": "Please enter news text."}), 400
+            return jsonify({
+                "error": "Please enter news text."
+            }), 400
 
         if len(news_text) < 30:
             return jsonify({
@@ -43,12 +46,28 @@ def predict():
         class_index = list(model.classes_).index(prediction)
         score = float(probabilities[class_index]) * 100
 
+        # Show an uncertain result when the model score is low.
+        if score < 60:
+            result = "UNCERTAIN — PLEASE VERIFY"
+            message = (
+                "The model is not sufficiently confident in its prediction. "
+                "Check this news using reliable sources."
+            )
+        else:
+            result = (
+                "REAL NEWS" if prediction == 1 else "FAKE NEWS"
+            )
+            message = (
+                "This is the model's prediction based on text patterns, "
+                "not confirmation that the news is true or false."
+            )
+
         return jsonify({
-            "prediction": "REAL NEWS" if prediction == 1 else "FAKE NEWS",
+            "prediction": result,
             "score": round(score, 2),
             "disclaimer": (
-                "This is an ML prediction, not a fact-check. "
-                "Verify important claims using reliable sources."
+                message
+                + " This model does not verify news against live sources."
             )
         })
 
@@ -65,3 +84,4 @@ if __name__ == "__main__":
         port=int(os.environ.get("PORT", 5000)),
         debug=False
     )
+
