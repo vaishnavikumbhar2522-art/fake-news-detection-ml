@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.py[cod]
+.env
+Fake.csv
+True.csv
+app.py.backup
+requirements_backup.txt
+models/app.py
+models/requirements.txt
+models/templates/

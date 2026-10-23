@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detector AI</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #0b1020;
+            color: #f8fafc;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 760px;
+            padding: 35px;
+            background: #151d31;
+            border: 1px solid #2d3954;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px #0005;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 20px;
+            background: #253654;
+            color: #a9c7ff;
+            font-size: 13px;
+        }
+
+        h1 {
+            font-size: 34px;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #b7c2d5;
+            line-height: 1.6;
+        }
+
+        label {
+            display: block;
+            margin: 25px 0 10px;
+            font-weight: bold;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 210px;
+            resize: vertical;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #3b4965;
+            background: #0c1426;
+            color: white;
+            font-size: 16px;
+            line-height: 1.6;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #7c9cff;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 18px;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: #6285ff;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        #result {
+            display: none;
+            margin-top: 24px;
+            padding: 20px;
+            border-radius: 12px;
+            background: #0c1426;
+            border: 1px solid #3b4965;
+        }
+
+        #prediction {
+            margin: 0 0 12px;
+            font-size: 24px;
+        }
+
+        .score-track {
+            height: 9px;
+            margin: 12px 0;
+            border-radius: 10px;
+            background: #354158;
+            overflow: hidden;
+        }
+
+        #scoreBar {
+            height: 100%;
+            width: 0;
+            background: #7c9cff;
+            transition: width 0.3s;
+        }
+
+        #message {
+            color: #c3cee0;
+            line-height: 1.6;
+        }
+
+        .disclaimer {
+            margin-top: 22px;
+            color: #9aa9c1;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 22px;
+            }
+
+            h1 {
+                font-size: 27px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <span class="badge">MACHINE LEARNING PROJECT</span>
+
+        <h1>Fake News Detector AI</h1>
+
+        <p class="description">
+            Enter a news article below. Our machine learning model
+            will analyze its text and predict whether it resembles
+            fake or real news in its training dataset.
+        </p>
+
+        <label for="news">News Article</label>
+
+        <textarea
+            id="news"
+            maxlength="20000"
+            placeholder="Paste the news headline and article text here..."
+        ></textarea>
+
+        <button id="predictBtn" onclick="predictNews()">
+            Analyze News
+        </button>
+
+        <section id="result" aria-live="polite">
+            <h2 id="prediction"></h2>
+            <p id="message"></p>
+            <p>Model score: <strong id="score"></strong></p>
+
+            <div class="score-track">
+                <div id="scoreBar"></div>
+            </div>
+
+            <p id="disclaimer"></p>
+        </section>
+
+        <p class="disclaimer">
+            Important: This tool is an educational ML project, not a
+            verified fact-checking service. Predictions can be wrong.
+            Check important claims against reliable independent sources.
+        </p>
+    </main>
+
+    <script>
+        async function predictNews() {
+            const news = document.getElementById("news").value.trim();
+            const button = document.getElementById("predictBtn");
+            const result = document.getElementById("result");
+
+            if (news.length < 30) {
+                alert("Please enter at least 30 characters of news text.");
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = "Analyzing...";
+            result.style.display = "block";
+
+            document.getElementById("prediction").textContent = "Please wait...";
+            document.getElementById("message").textContent = "";
+            document.getElementById("score").textContent = "";
+            document.getElementById("scoreBar").style.width = "0";
+            document.getElementById("disclaimer").textContent = "";
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ news: news })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Prediction failed.");
+                }
+
+                document.getElementById("prediction").textContent =
+                    data.prediction;
+
+                document.getElementById("message").textContent =
+                    data.prediction === "REAL NEWS"
+                    ? "The model found patterns associated with real news."
+                    : "The model found patterns associated with fake news.";
+
+                document.getElementById("score").textContent =
+                    data.score + "%";
+
+                document.getElementById("scoreBar").style.width =
+                    data.score + "%";
+
+                document.getElementById("disclaimer").textContent =
+                    data.disclaimer;
+
+            } catch (error) {
+                document.getElementById("prediction").textContent = "Error";
+                document.getElementById("message").textContent = error.message;
+            } finally {
+                button.disabled = false;
+                button.textContent = "Analyze News";
+            }
+        }
+    </script>
+</body>
+</html>
